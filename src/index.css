@@ -1,0 +1,436 @@
+/* ==========================================
+   React Flow: overflow/handles behavior
+   ========================================== */
+.reactflow__nodes,
+.reactflow__pane,
+.reactflow__viewport,
+.reactflow__node {
+  overflow: visible !important;
+  z-index: 1; /* ensure handles can overflow */
+}
+
+/* ==========================================
+   Root theme tokens and base rendering
+   ========================================== */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* brand palette */
+  --mauve: #d2d2eb;
+  --taupe: #aa9d9f;
+  --brun: #826d62;
+  --kaki: #585b4c;
+  --noir: #2a2c24;
+
+  /* layout metrics */
+  --nav-h: 96px;
+  --footer-h: 36px;
+}
+
+/* Links */
+a { font-weight: 500; color: #646cff; text-decoration: inherit; }
+a:hover { color: #535bf2; }
+
+/* Page shell */
+body {
+  margin: 0;
+  min-width: 320px;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--mauve);
+  color: var(--noir);
+  overflow-x: hidden;
+  box-sizing: border-box;
+  min-height: 100dvh; /* dynamic viewport height */
+  display: flex;
+  flex-direction: column; /* header -> main -> footer */
+}
+
+h1 { font-size: 3.2em; line-height: 1.1; }
+
+/* Buttons */
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 10px 16px;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  background-color: #1a1a1a;
+  cursor: pointer;
+  transition: border-color 0.25s;
+}
+button:hover { border-color: #646cff; }
+button:focus,
+button:focus-visible { outline: 4px auto -webkit-focus-ring-color; }
+
+/* Light color scheme overrides */
+@media (prefers-color-scheme: light) {
+  :root { color: #213547; background-color: #ffffff; }
+  a:hover { color: #747bff; }
+  button { background-color: #f9f9f9; }
+}
+
+/* ==========================================
+   Layout: components + folders
+   ========================================== */
+.component-form-section { flex: 0 0 auto; padding: 16px; overflow: visible; min-width: 0; }
+.form-standard h2 { margin: 12px 0 14px; line-height: 1.25; }
+
+.folders-section {
+  flex: 1 1 auto;
+  padding: 16px 16px 16px;
+  padding-top: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* On small screens ensure "My folders" gets some height */
+@media (max-width: 900px) { .folders-section { min-height: 50vh; } }
+
+.split-divider {
+  /* Keep layout thin; extend hitbox via ::after */
+  width: 1px;                 /* actual layout width */
+  background: transparent;
+  height: 100%;
+  cursor: col-resize;
+  position: relative;
+  z-index: 10;                /* stay above adjacent panels */
+  touch-action: none;         /* avoid touch scrolling while dragging */
+}
+/* Very thin visible line centered */
+.split-divider::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  transform: translateX(-0.5px);
+  background: rgba(0,0,0,0.18);
+}
+/* Large transparent hitbox */
+.split-divider::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: calc(50% + 1px);
+  width: 6px;
+  transform: none;
+  background: transparent;
+}
+.split-divider:focus-visible::after {
+  /* subtle highlight only on the right side, flush to the line */
+  background: rgba(67, 52, 114, 0.06);
+}
+.split-divider:hover::before,
+.split-divider:active::before,
+.split-divider:focus-visible::before {
+  background: rgba(0,0,0,0.35); /* highlight the central line */
+  width: 2px;
+  transform: translateX(-1px);
+}
+
+/* BOM canvas container */
+.bom-frame {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  min-width: 300px;
+  min-height: 400px;
+  width: 80%;
+  height: 80%;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  border: 2px dashed #999;
+  flex: 1;
+  overflow: visible !important; /* allow nodes/handles to overflow */
+}
+
+.horizontal-divider { height: 2px; background: #ccc; width: 100%; margin: 8px 0 4px; }
+
+.component-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  padding: 10px;
+  background: #e2e2e2;
+  min-height: 300px;
+  overflow-y: auto;
+}
+
+/* ==========================================
+   React Flow nodes: wrapper and inline handles
+   ========================================== */
+.component-node-wrapper { position: relative; display: inline-block; }
+
+.component-node-wrapper .handle {
+  position: absolute;
+  width: 12px; height: 12px; /* square circle */
+  padding: 0; border: none; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8px; line-height: 2;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 10;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+.component-node-wrapper .handle:focus { outline: none; box-shadow: 0 0 0 1.7px rgba(210,210,235,0.4); }
+
+/* Handle positions */
+.component-node-wrapper .plus  { background-color: #27ae60; top: -6px; right: 19px; color: #fff; }
+.component-node-wrapper .minus { background-color: #e74c3c; top: 25px; right: -6px; transform: translateY(-50%); color: #fff; }
+
+/* Hide handles/badges inside the source list */
+.source-list-zone .component-node-wrapper .handle,
+.source-list-zone .component-card-wrapper .badge { display: none !important; }
+
+/* ==========================================
+   Lists and basic components
+   ========================================== */
+.taupe { background-color: var(--taupe); }
+
+.component-list { list-style: none; padding: 0; margin: 0; display: flex; gap: 12px; justify-content: flex-start; flex-wrap: wrap; }
+.component-list-item { width: 140px; height: auto; display: flex; justify-content: center; align-items: center; }
+
+/* ==========================================
+   Forms and folder items
+   ========================================== */
+.form-standard { display: flex; flex-direction: column; gap: 12px; }
+.button-standard { align-self: flex-start; }
+
+.dossier-form-line { display: flex; gap: 10px; margin-bottom: 12px; }
+
+.dossier-item { cursor: pointer; padding: 12px; margin-bottom: 8px; background: #f5f5f5; border-radius: 6px; user-select: none; display: flex; align-items: center; gap: 8px; position: relative; padding-right: 96px; transition: background 140ms ease; }
+.dossier-item:hover { background: #ededed; }
+.dossier-name { flex: 1 1 auto; min-width: 0; }
+.dossier-expander { position: absolute; right: 64px; top: 50%; transform: translateY(-50%); color: rgba(0,0,0,0.45); font-weight: 700; letter-spacing: 2px; opacity: 0; transition: opacity 140ms ease, transform 140ms ease; pointer-events: none; }
+.dossier-item:hover .dossier-expander { opacity: 1; transform: translateY(-50%) scale(1.04); }
+.dossier-actions { display: inline-flex; gap: 6px; position: absolute; right: 8px; top: 50%; transform: translateY(-50%); }
+/* Folder row action buttons: same look as component icons, without absolute positioning */
+.folder-icon-btn { width: 22px; height: 22px; border-radius: 9999px; background: #fff; border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 1px 3px rgba(0,0,0,0.18); display: flex; align-items: center; justify-content: center; cursor: pointer; line-height: 1; padding: 0; color: #2a2c24; }
+.folder-icon-btn:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.folder-icon-btn:focus { outline: none; box-shadow: 0 0 0 2px rgba(67,52,114,0.35); }
+.folder-icon-btn svg { width: 14px; height: 14px; display: block; fill: currentColor; }
+.folder-icon-trash { color: #d32f2f; }
+.folder-icon-edit { color: #2a2c24; }
+
+/* Full-bleed split layout inside padded .page */
+.page .split-layout { width: 100vw; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw; }
+.dossier-item.active { outline: 2px solid #433472; background: #ece8ff; }
+.dossier-item:focus { box-shadow: 0 0 0 2px rgba(67,52,114,0.3); }
+
+/* Drag preview card */
+.drag-ghost {
+  width: 140px; height: 90px;
+  background: #585b4c; color: #d2d2eb;
+  border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: bold; font-size: 0.9rem;
+  pointer-events: none; border: 1px solid rgba(0,0,0,0.08);
+  box-sizing: border-box;
+}
+.drag-ghost.bom { background: #800000; color: #fff; }
+
+.dossier-section-list { padding: 6px 0 12px 8px; margin-bottom: 6px; }
+
+/* Compact form rows (abbr + input) */
+.form-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; min-width: 0; }
+.form-row > input,
+.form-row > select {
+  flex: 1 1 auto;
+  min-width: 0;           /* allow shrinking inside narrow columns */
+  width: 1%;              /* help flex inputs shrink below intrinsic width */
+  box-sizing: border-box;
+}
+
+/* Abbreviation badge (UC, LT, etc.) */
+.abbr-badge {
+  display: inline-block;
+  min-width: 24px; height: 18px; line-height: 18px;
+  padding: 0 6px; border-radius: 12px; background: var(--taupe); color: #fff;
+  font-size: 0.75rem; text-align: center; user-select: none;
+}
+
+/* Numeric form grid */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; align-items: start; }
+.form-col { display: grid; gap: 8px; }
+@media (max-width: 900px) { .form-grid { grid-template-columns: 1fr; } }
+
+/* ==========================================
+   Modal overlay
+   ========================================== */
+.ReactModal__Overlay { z-index: 2000 !important; background-color: rgba(0,0,0,0.55) !important; }
+
+/* ==========================================
+   Navigation (top navbar)
+   ========================================== */
+.nav-tabs { display: inline-flex; gap: 12px; margin-left: 16px; }
+.nav-left { display: flex; align-items: center; gap: 8px; }
+
+/* Perfectly centered tabs within fixed nav */
+.nav-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; gap: 16px; min-width: 0; pointer-events: auto; }
+
+/* Tab links with subtle underline hover */
+.nav-link { position: relative; color: #eee; text-decoration: none; padding: 6px 8px; white-space: nowrap; }
+.nav-link::after { content: ""; position: absolute; left: 10%; right: 10%; bottom: -6px; height: 3px; background: transparent; border-radius: 2px; transform: scaleX(0); transform-origin: center; transition: transform 140ms ease, background 140ms ease; }
+.nav-link:hover::after { background: #fff; transform: scaleX(1); }
+.nav-link.active { color: #fff; }
+@media (max-width: 640px) { .nav-center { gap: 10px; } }
+
+/* ==========================================
+   Page wrapper and headings
+   ========================================== */
+.page { padding: 96px 16px 16px; box-sizing: border-box; flex: 1 0 auto; width: 100%; background: var(--mauve); }
+@media (max-width: 600px) { .page { padding-top: 112px; } }
+.page-heading { margin: 0 0 20px 0; font-size: 1.6rem; }
+
+/* ==========================================
+   EOQ form and tables
+   ========================================== */
+.eoq-form { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; align-items: center; margin-bottom: 16px; }
+.eoq-form label { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+.eoq-form select,
+.eoq-form input[type="text"],
+.eoq-form input[type="number"] { padding: 6px 8px; border: 1px solid rgba(0,0,0,0.15); border-radius: 6px; background: #fff; }
+
+.table-wrapper { background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); padding: 12px; overflow-x: auto; margin: 8px auto 24px; }
+
+.table { width: 100%; border-collapse: collapse; font-size: 0.95rem; }
+.table th, .table td { border-bottom: 1px solid rgba(0,0,0,0.08); padding: 10px 12px; text-align: center; }
+.table th { background: rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1; }
+
+/* Zebra and hover for EOQ tables */
+.table--eoq tbody tr:nth-child(even) td { background: rgba(0,0,0,0.025); }
+.table--eoq tbody tr:hover td { background: rgba(0,0,0,0.06); transition: background 120ms ease; }
+
+/* ==========================================
+   About page
+   ========================================== */
+.about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; }
+.about-textarea { width: 100%; min-height: 130px; padding: 10px 12px; background: #fff; border: 1px solid rgba(0,0,0,0.12); border-radius: 8px; resize: vertical; font-family: inherit; font-size: 0.95rem; }
+.about-preview { padding: 8px 12px 14px; }
+.about-preview pre { white-space: pre-wrap; background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.06); border-radius: 8px; padding: 8px 10px; margin: 6px 0 12px; }
+@media (max-width: 800px) { .about-grid { grid-template-columns: 1fr; } }
+
+.about-section { background: #f7f6ff; border-radius: 16px; box-shadow: 0 2px 12px rgba(130,109,98,0.07); margin-bottom: 32px; padding: 18px 24px 28px 24px; border-left: 8px solid var(--taupe); transition: box-shadow 0.2s; }
+.about-section .about-title { margin-top: 0; margin-bottom: 8px; font-size: 1.25em; letter-spacing: 0.5px; }
+.about-hero { background: linear-gradient(90deg, #eaf7f7 0%, #d2d2eb 100%); border-radius: 18px; padding: 10px 24px; margin: 32px 0 18px; box-shadow: 0 2px 12px rgba(210,210,235,0.08); }
+.about-hero h2 { margin: 8px 0; }
+.about-kicker { font-size: 1.1em; color: var(--brun); margin-top: 10px; font-weight: 500; }
+.sources-box { background: #eaf7f7; border-left: 8px solid var(--kaki); }
+.about-sources { margin-top: 12px; padding-left: 18px; }
+
+.chip-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 18px; align-items: start; }
+.chip-row .chip { margin-bottom: 0; }
+.chip-row p { margin-top: 0; }
+
+.chip { background: linear-gradient(90deg, #d2d2eb 60%, #eaf7f7 100%); border-radius: 12px; padding: 8px 18px; font-weight: 600; color: var(--noir); box-shadow: 0 1px 6px rgba(130,109,98,0.08); margin-bottom: 6px; font-size: 1em; border: 1.5px solid var(--taupe); }
+.chip:hover { background: linear-gradient(90deg, #d2d2eb 60%, #eaf7f7 100%); border-color: var(--taupe); }
+
+.chip-row p { background: #fff; border-radius: 10px; padding: 10px 14px; margin: 0; box-shadow: 0 1px 6px rgba(130,109,98,0.06); border-left: 4px solid var(--taupe); font-size: 0.98em; color: #333; min-width: 220px; max-width: 420px; }
+@media (max-width: 900px) { .chip-row { grid-template-columns: repeat(2, 1fr); } }
+.about-section:nth-of-type(1) { padding-bottom: 6px; }
+.about-section:nth-of-type(2) { padding-bottom: 10px; }
+.about-section.sources-box { padding-bottom: 14px; }
+
+/* ==========================================
+   Footer
+   ========================================== */
+.site-footer { background: var(--noir); color: #eaeaea; padding: 14px 16px; border-top: 1px solid rgba(255,255,255,0.08); width: 100%; height: var(--footer-h); margin: 0; flex: 0 0 auto; position: static; }
+.footer-inner { max-width: 1100px; margin: 0 auto; display: flex; gap: 12px; justify-content: space-between; align-items: center; }
+.footer-copy { font-size: 0.95rem; opacity: 0.9; }
+.footer-icons { display: inline-flex; gap: 10px; }
+.footer-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; color: #eaeaea; background: rgba(255,255,255,0.08); border-radius: 50%; transition: transform 120ms ease, background 120ms ease, color 120ms ease; }
+.footer-icon:hover { background: rgba(255,255,255,0.18); color: #fff; transform: translateY(-1px); }
+.footer-img { width: 20px; height: 20px; display: block; }
+.footer-img-bw { filter: grayscale(100%); }
+.footer-icon:hover .footer-img-bw { filter: grayscale(100%) brightness(1.2) contrast(1.05); }
+
+/* Ensure footer sticks to bottom on short pages */
+html, body, #root { height: 100%; }
+#root { display: flex; flex-direction: column; min-height: 100vh; width: 100%; }
+
+/* ==========================================
+   Auth (Login / Sign up)
+   ========================================== */
+.auth-page { padding-bottom: 0; }
+.auth-center { flex: 1 1 auto; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 24px; }
+.auth-card { background: var(--taupe); border-radius: 12px; padding: 24px 28px; width: 100%; max-width: 420px; box-shadow: 0 6px 24px rgba(0,0,0,0.12); }
+.auth-card h2 { margin: 0 0 12px; text-align: center; color: var(--noir); font-weight: 700; }
+.auth-card .form-row { display: grid; gap: 6px; margin-bottom: 10px; }
+.auth-card label { font-weight: 600; color: #1f1f1f; }
+.auth-card input { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(0,0,0,0.2); background: #fff; color: #111; }
+.auth-btn { width: 100%; margin-top: 12px; padding: 10px 12px; border-radius: 8px; border: none; background: #fff; color: #222; font-weight: 600; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+.auth-btn:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.auth-footer { margin-top: 10px; text-align: center; }
+.auth-footer .auth-toggle { color: var(--kaki) !important; }
+
+/* ==========================================
+   Split layout with React Flow canvas
+   ========================================== */
+.split-layout { display: flex; width: 100%; align-items: stretch; min-height: inherit; height: auto; margin-bottom: 0; }
+.reactflow { width: 100% !important; height: 100% !important; }
+.split-left { flex: 1; display: flex; flex-direction: column; min-height: 0; min-width: 290px; background: var(--mauve); }
+.split-left > *:last-child { margin-bottom: 0 !important; }
+.split-right { background-color: var(--taupe) !important; flex: 1; min-height: auto; min-width: 0; display: flex; align-items: stretch; justify-content: stretch; }
+.split-left, .split-right { padding-top: 0; }
+.page--no-bottom-gap { padding-bottom: 0; }
+
+/* ==========================================
+   Orders grid and MRP selectors
+   ========================================== */
+.order-grid > div { white-space: nowrap; }
+
+/* MRP selectors */
+.mrp-selectors { display: flex; align-items: center; gap: 12px; margin: 18px 0 14px; }
+.mrp-selectors label { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: rgba(0,0,0,0.85); }
+.mrp-selectors select:focus { outline: none; box-shadow: 0 0 0 3px rgba(72,99,246,0.2); border-color: rgba(72,99,246,0.5); }
+.mrp-selectors select { appearance: auto; -webkit-appearance: auto; -moz-appearance: auto; }
+
+.order-grid__th { font-weight: 600; opacity: 0.9; white-space: nowrap; text-align: center; justify-self: center; }
+.order-grid__sep { height: 1px; background: rgba(0,0,0,0.12); margin: 2px 0 6px; }
+.order-grid input::placeholder { color: rgba(0,0,0,0.45); }
+.order-input--offset { width: 60px; text-align: left; }
+.order-input--demand { width: 100px; text-align: left; }
+.orders-toolbar { display: flex; align-items: center; gap: 12px; margin: 1px 0 22px; }
+.order-grid input.order-input { justify-self: end; text-align: right; }
+.col-order, .col-time { justify-self: center; text-align: center; }
+
+/* ==========================================
+   EOQ page vertical centering
+   ========================================== */
+.eoq-page { min-height: calc(100vh - var(--nav-h) - var(--footer-h)); display: flex; flex-direction: column; padding-bottom: 0; }
+main.page { flex: 1 0 auto; display: flex; flex-direction: column; }
+.eoq-page .eoq-vertical { flex: 1; display: flex; flex-direction: column; justify-content: center; margin: auto 0; }
+
+/* ==========================================
+   Math formula helpers (sqrt, fraction)
+   ========================================== */
+.sq, .sq3, .sq4 { display: inline-block; border-top: 2px solid #222; position: relative; margin-left: .3em; }
+/* Square root container with vinculum */
+.sq2 { display: inline-flex; align-items: flex-start; position: relative; margin: 0 .1em 0 .3em; font-size: 1.15em; border-top: 2px solid #222; }
+/* Radical sign (adjusted to touch the vinculum and span the fraction) */
+.sq2:before { content: "\221A"; position: absolute; left: -0.50em; top: -0.60em; line-height: 1; font-size: 1.1em; transform: scaleY(3.0); transform-origin: top right; }
+.sq2 .fraction { margin-left: 0.12em; }
+.fraction { display: inline-block; vertical-align: middle; text-align: center; min-width: 2.5em; }
+.fraction .num { display: block; border-bottom: 2px solid #222; padding: 0 6px 2px 6px; font-size: 1em; }
+.fraction .den { display: block; padding: 2px 6px 0 6px; font-size: 1em; }

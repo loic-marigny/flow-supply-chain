@@ -1,0 +1,176 @@
+/* ==========================================================================
+   ComponentCard.css — styles for component cards and the quantity badge
+   ========================================================================== */
+
+/* Component card (main content) */
+.component-card {
+  width: 140px;
+  height: 90px;
+  background: #585B4C;
+  border-radius: 12px;
+  padding: 12px;
+  color: #D2D2EB;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+  display: grid;
+  gap: 4px;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+/* Header: title + optional small internal badge */
+.component-card .card-header {
+  font-size: 1rem;
+  font-weight: bold;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+/* Name (first span) stretches to available width and stays centered */
+.component-card .card-header span:first-child {
+  flex: 1;
+  text-align: center;
+}
+
+/* Card body: compact two-column grid for attributes */
+.component-card .card-body {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  font-size: 0.7rem;
+  line-height: 1.1;
+  gap: 2px 8px;
+}
+
+/* Small internal badge (e.g. OH) — card-specific */
+.component-card .badge {
+  background: #826D62;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 0.7rem;
+  color: white;
+}
+
+/* --------------------------------------------------------------------------
+   Relative wrapper to position elements above the card
+   (floating badge, edit icon, etc.)
+   -------------------------------------------------------------------------- */
+.component-card-wrapper {
+  position: relative;
+}
+
+/* Floating badge at the top-right of the wrapper (e.g. quantity) */
+.component-card-wrapper .badge {
+  position: absolute;
+  top: -12px;      /* half the diameter so it cleanly overlaps */
+  right: -12px;
+  width: 24px;     /* diameter */
+  height: 24px;
+  background-color: var(--taupe);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  z-index: 5;
+}
+
+/* Generic badge (used elsewhere, e.g. in ComponentNode) */
+.badge {
+  width: 32px;
+  height: 32px;
+  background: var(--taupe);
+  color: #fff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1em;
+  user-select: none;
+}
+
+
+/* --------------------------------------------------------------------------
+   Quantity input (editable badge) — used by ComponentNode
+   -------------------------------------------------------------------------- */
+.component-node-qty-input {
+  appearance: none;
+  border: none;
+  border-radius: 4px;
+  background: var(--taupe);
+  color: #fff;
+  font-size: 0.9em;
+  line-height: 1;
+  padding: 0;
+}
+
+/* Remove default spinners of input[type=number] (WebKit) */
+.component-node-qty-input::-webkit-outer-spin-button,
+.component-node-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* When the node is selected, show a border around the quantity input */
+.component-node-qty-input.selected {
+  border: 2px solid var(--noir); /* #000 si tu préfères */
+}
+
+/* Clear, accessible focus */
+.component-node-qty-input:focus {
+  outline: 2px solid rgba(210,210,235,0.7);
+  outline-offset: 1px;
+}
+
+/* Round icon buttons at the top-right of list cards */
+.icon-btn {
+  position: absolute;
+  right: -10px;               /* “stuck” to the corner */
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;      /* perfect circle */
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.06);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  z-index: 10;
+}
+
+.icon-btn svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+  fill: currentColor;         /* inherits from color below */
+}
+
+/* Trash: at the very top, red */
+.icon-trash {
+  top: -10px;
+  color: #d32f2f;
+}
+
+/* Pencil: just below */
+.icon-edit {
+  top: 16px;
+  color: #2a2c24;
+}
+
+.icon-btn:hover {
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.icon-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(67, 52, 114, 0.35);
+}
+
