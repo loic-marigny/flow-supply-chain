@@ -1,6 +1,6 @@
 # Flow Supply Chain
 
-EOQ and MRP calculators with a bilingual UI (EN/FR). Frontend built with **Vite + React + TypeScript**, backend on **Firebase** (Auth, Firestore, Functions). Deployed to **GitHub Pages**.
+EOQ and MRP calculators with a bilingual UI (EN/FR/RU). Frontend built with **Vite + React + TypeScript**, backend on **Firebase** (Auth, Firestore, Functions). Deployed to **GitHub Pages**.
 
 ## 🚀 Demo
 
@@ -11,7 +11,7 @@ EOQ and MRP calculators with a bilingual UI (EN/FR). Frontend built with **Vite 
 * 📦 **EOQ** (Economic Order Quantity)
 * 🧮 **MRP** (Material Requirements Planning)
 * 🔐 Firebase authentication (Email/Password, Google)
-* 🌍 i18n (English/French) with flag selector
+* 🌍 i18n (English/French/Russian) with flag selector
 * ⚡ Fast dev/build with Vite; continuous deployment via GitHub Actions → Pages
 
 ## 🧱 Tech Stack
@@ -155,7 +155,7 @@ vite.config.ts
 
 ## 📝 License
 
-MIT (replace if needed)
+MIT
 
 ## 🙏 Acknowledgements
 
